@@ -19,6 +19,11 @@ class Airomi_Sync {
 
 		$payload = Airomi_Order_Payload::build( $order_id );
 		if ( $payload === null ) {
+			$message = Airomi_Order_Payload::get_last_error();
+			if ( $message === '' ) {
+				$message = __( 'Order or payload unavailable.', 'airomi-api-connect' );
+			}
+			self::update_row_failed( $order_id, null, $message, true );
 			return false;
 		}
 
