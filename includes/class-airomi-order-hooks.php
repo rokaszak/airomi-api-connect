@@ -7,55 +7,14 @@ class Airomi_Order_Hooks {
 	private static $synced_this_request = array();
 
 	public static function init() {
-		add_action( 'woocommerce_new_order', array( __CLASS__, 'on_new_order' ), 10, 2 );
-		add_action( 'woocommerce_update_order', array( __CLASS__, 'on_update_order' ), 10, 2 );
-		add_action( 'woocommerce_before_delete_order', array( __CLASS__, 'on_delete_order' ), 10, 2 );
-		add_action( 'woocommerce_trash_order', array( __CLASS__, 'on_trash_order' ), 10, 2 );
+		add_action( 'woocommerce_new_order', array( __CLASS__, 'handle_order_event' ), 10, 1 );
+		add_action( 'woocommerce_update_order', array( __CLASS__, 'handle_order_event' ), 10, 1 );
+		add_action( 'woocommerce_before_delete_order', array( __CLASS__, 'handle_order_event' ), 10, 1 );
+		add_action( 'woocommerce_trash_order', array( __CLASS__, 'handle_order_event' ), 10, 1 );
+		add_action( 'woocommerce_untrash_order', array( __CLASS__, 'handle_order_event' ), 10, 1 );
 	}
 
-	public static function on_new_order( $order_id, $order = null ) {
-		$order_id = (int) $order_id;
-		self::ensure_row_exists( $order_id );
-		if ( isset( self::$synced_this_request[ $order_id ] ) ) {
-			return;
-		}
-		self::$synced_this_request[ $order_id ] = true;
-		if ( Airomi_Settings::is_sync_enabled() ) {
-			Airomi_Sync::sync_order( $order_id );
-		} else {
-			Airomi_Sync::mark_failed_sync_disabled( $order_id );
-		}
-	}
-
-	public static function on_update_order( $order_id, $order = null ) {
-		$order_id = (int) $order_id;
-		self::ensure_row_exists( $order_id );
-		if ( isset( self::$synced_this_request[ $order_id ] ) ) {
-			return;
-		}
-		self::$synced_this_request[ $order_id ] = true;
-		if ( Airomi_Settings::is_sync_enabled() ) {
-			Airomi_Sync::sync_order( $order_id );
-		} else {
-			Airomi_Sync::mark_failed_sync_disabled( $order_id );
-		}
-	}
-
-	public static function on_delete_order( $order_id, $order = null ) {
-		$order_id = (int) $order_id;
-		self::ensure_row_exists( $order_id );
-		if ( isset( self::$synced_this_request[ $order_id ] ) ) {
-			return;
-		}
-		self::$synced_this_request[ $order_id ] = true;
-		if ( Airomi_Settings::is_sync_enabled() ) {
-			Airomi_Sync::sync_order( $order_id );
-		} else {
-			Airomi_Sync::mark_failed_sync_disabled( $order_id );
-		}
-	}
-
-	public static function on_trash_order( $order_id, $order = null ) {
+	public static function handle_order_event( $order_id ) {
 		$order_id = (int) $order_id;
 		self::ensure_row_exists( $order_id );
 		if ( isset( self::$synced_this_request[ $order_id ] ) ) {
