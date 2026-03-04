@@ -1,17 +1,9 @@
 <?php
-/**
- * Main plugin class: WooCommerce check, loader, activation.
- *
- * @package Airomi_API_Connect
- */
 
 defined( 'ABSPATH' ) || exit;
 
 final class Airomi_API_Connect {
 
-	/**
-	 * @var Airomi_API_Connect|null
-	 */
 	private static $instance = null;
 
 	public static function init() {
@@ -32,9 +24,6 @@ final class Airomi_API_Connect {
 		echo '</p></div>';
 	}
 
-	/**
-	 * Activation hook: run schema install.
-	 */
 	public static function activate() {
 		require_once airomi_api_connect_path() . 'includes/class-airomi-schema.php';
 		require_once airomi_api_connect_path() . 'includes/class-airomi-install.php';
@@ -43,13 +32,22 @@ final class Airomi_API_Connect {
 
 	private function __construct() {
 		$this->maybe_upgrade_schema();
+		require_once airomi_api_connect_path() . 'includes/class-airomi-settings.php';
+		require_once airomi_api_connect_path() . 'includes/class-airomi-order-payload.php';
+		require_once airomi_api_connect_path() . 'includes/class-airomi-sync.php';
+		require_once airomi_api_connect_path() . 'includes/class-airomi-order-hooks.php';
+		require_once airomi_api_connect_path() . 'includes/class-airomi-cron.php';
+		require_once airomi_api_connect_path() . 'includes/class-airomi-ajax.php';
+		Airomi_Order_Hooks::init();
+		Airomi_Cron::init();
+		Airomi_Ajax::init();
 		$this->load_admin();
 	}
 
 	private function maybe_upgrade_schema() {
 		require_once airomi_api_connect_path() . 'includes/class-airomi-schema.php';
 		require_once airomi_api_connect_path() . 'includes/class-airomi-install.php';
-		$stored = (int) get_option( 'airomi_db_version', 0 );
+		$stored = (int) get_option( AIROMI_OPTION_DB_VERSION, 0 );
 		if ( $stored < AIROMI_DB_VERSION ) {
 			airomi_maybe_install_or_upgrade_schema();
 		}

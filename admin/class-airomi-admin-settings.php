@@ -1,29 +1,55 @@
 <?php
-/**
- * Plugin main settings page under WooCommerce sidebar with tabs.
- *
- * @package Airomi_API_Connect
- */
 
 defined( 'ABSPATH' ) || exit;
 
 class Airomi_Admin_Settings {
 
-	const PAGE_SLUG = 'airomi-api-connect';
-	const TAB_PARAM = 'tab';
-
-	/**
-	 * Tab definitions: id => label.
-	 *
-	 * @var array<string, string>
-	 */
-	private static $tabs = array(
-		'main'  => 'Main',
-		'other' => 'Other',
-	);
+	const PAGE_SLUG   = AIROMI_API_CONNECT_SLUG;
+	const TAB_PARAM   = 'tab';
+	const SAVE_ACTION = 'airomi_save_settings';
+	const NONCE_FIELD = 'airomi_settings_nonce';
 
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ), 20 );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'admin_post_' . self::SAVE_ACTION, array( __CLASS__, 'handle_save_settings' ) );
+	}
+
+	public static function get_tabs() {
+		return array(
+			'settings' => __( 'Settings', 'airomi-api-connect' ),
+			'orders'   => __( 'Orders', 'airomi-api-connect' ),
+		);
+	}
+
+	private static function get_tab_classes() {
+		return array(
+			'settings' => 'Airomi_Admin_Tab_Settings',
+			'orders'   => 'Airomi_Admin_Tab_Orders',
+		);
+	}
+
+	public static function enqueue_assets( $hook_suffix ) {
+		if ( $hook_suffix !== 'woocommerce_page_' . self::PAGE_SLUG ) {
+			return;
+		}
+		wp_enqueue_script(
+			'airomi-admin',
+			plugins_url( 'admin/js/airomi-admin.js', AIROMI_API_CONNECT_FILE ),
+			array(),
+			AIROMI_API_CONNECT_VERSION,
+			true
+		);
+		wp_localize_script( 'airomi-admin', 'airomiAdmin', array(
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( 'airomi_admin' ),
+		) );
+		wp_enqueue_style(
+			'airomi-admin',
+			plugins_url( 'admin/css/airomi-admin.css', AIROMI_API_CONNECT_FILE ),
+			array(),
+			AIROMI_API_CONNECT_VERSION
+		);
 	}
 
 	public static function register_menu() {
@@ -37,15 +63,21 @@ class Airomi_Admin_Settings {
 		);
 	}
 
+	public static function handle_save_settings() {
+		require_once airomi_api_connect_path() . 'admin/class-airomi-admin-tab-settings.php';
+		Airomi_Admin_Tab_Settings::handle_save();
+	}
+
 	public static function render_page() {
 		$current_tab = self::get_current_tab();
 		$base_url    = admin_url( 'admin.php?page=' . self::PAGE_SLUG );
+		$tabs        = self::get_tabs();
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Airomi API Connect', 'airomi-api-connect' ); ?></h1>
 			<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'Secondary navigation', 'airomi-api-connect' ); ?>">
 				<?php
-				foreach ( self::$tabs as $tab_id => $label ) {
+				foreach ( $tabs as $tab_id => $label ) {
 					$url   = add_query_arg( self::TAB_PARAM, $tab_id, $base_url );
 					$class = 'nav-tab' . ( $current_tab === $tab_id ? ' nav-tab-active' : '' );
 					printf(
@@ -59,10 +91,14 @@ class Airomi_Admin_Settings {
 			</nav>
 			<div class="airomi-settings-tab-content" style="margin-top: 1em;">
 				<?php
-				if ( $current_tab === 'main' ) {
-					self::render_main_tab();
-				} else {
-					self::render_other_tab();
+				$classes = self::get_tab_classes();
+				$tab_class = $classes[ $current_tab ];
+				$tab_file = airomi_api_connect_path() . 'admin/class-airomi-admin-tab-' . $current_tab . '.php';
+				if ( is_readable( $tab_file ) ) {
+					require_once $tab_file;
+					if ( method_exists( $tab_class, 'render' ) ) {
+						$tab_class::render();
+					}
 				}
 				?>
 			</div>
@@ -71,52 +107,8 @@ class Airomi_Admin_Settings {
 	}
 
 	private static function get_current_tab() {
-		$tab = isset( $_GET[ self::TAB_PARAM ] ) ? sanitize_key( $_GET[ self::TAB_PARAM ] ) : 'main';
-		return array_key_exists( $tab, self::$tabs ) ? $tab : 'main';
-	}
-
-	private static function render_main_tab() {
-		$hpos_enabled = self::is_hpos_enabled();
-		?>
-		<div class="airomi-main-tab">
-			<table class="form-table" role="presentation">
-				<tbody>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'HPOS (High-Performance Order Storage)', 'airomi-api-connect' ); ?></th>
-						<td>
-							<?php if ( $hpos_enabled ) : ?>
-								<p><?php esc_html_e( 'HPOS is enabled.', 'airomi-api-connect' ); ?></p>
-							<?php else : ?>
-								<p><?php esc_html_e( 'HPOS is not enabled.', 'airomi-api-connect' ); ?></p>
-							<?php endif; ?>
-						</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-		<?php
-	}
-
-	private static function render_other_tab() {
-		?>
-		<div class="airomi-other-tab">
-			<p><?php esc_html_e( 'This page is reserved for future use.', 'airomi-api-connect' ); ?></p>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Whether WooCommerce HPOS (custom order tables) is enabled.
-	 *
-	 * @return bool
-	 */
-	private static function is_hpos_enabled() {
-		if ( ! class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' ) ) {
-			return false;
-		}
-		if ( ! method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'custom_orders_table_usage_is_enabled' ) ) {
-			return false;
-		}
-		return \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+		$tabs = self::get_tabs();
+		$tab  = isset( $_GET[ self::TAB_PARAM ] ) ? sanitize_key( $_GET[ self::TAB_PARAM ] ) : 'settings';
+		return array_key_exists( $tab, $tabs ) ? $tab : 'settings';
 	}
 }

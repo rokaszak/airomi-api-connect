@@ -1,0 +1,55 @@
+.airomi-status {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-size: 12px;
+}
+
+.airomi-status-init {
+	background: #f0f0f1;
+	color: #2c3338;
+}
+
+.airomi-status-pending {
+	background: #dba617;
+	color: #fff;
+}
+
+.airomi-status-success {
+	background: #00a32a;
+	color: #fff;
+}
+
+.airomi-status-failed {
+	background: #d63638;
+	color: #fff;
+}
+
+.airomi-modal-overlay {
+	align-items: center;
+	justify-content: center;
+}
+
+.airomi-modal-box {
+	max-height: 90vh;
+}
+
+.airomi-header-row {
+	margin-bottom: 8px;
+}
+
+.airomi-header-row input[type="text"] {
+	margin-right: 8px;
+}
+
+.airomi-init-orders-wrap .button-primary {
+	margin-bottom: 0;
+}
+
+.airomi-progress-bar {
+	box-sizing: border-box;
+}
+
+.airomi-progress-fill {
+	transition: width 0.2s ease;
+}
