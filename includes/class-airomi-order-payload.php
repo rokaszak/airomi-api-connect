@@ -25,6 +25,9 @@ class Airomi_Order_Payload {
 			self::$last_error = __( 'Order not found.', 'airomi-api-connect' );
 			return null;
 		}
+		if ( $order->get_status() === 'trash' ) {
+			return array( 'id' => $order_id, 'status' => 'trashed' );
+		}
 		$request = new WP_REST_Request( 'GET' );
 		$request->set_param( 'context', 'view' );
 		$request->set_param( 'dp', null );
