@@ -18,12 +18,19 @@ class Airomi_Order_Payload {
 			self::$last_error = __( 'Order not found.', 'airomi-api-connect' );
 			return null;
 		}
-		$controller = new WC_REST_Orders_Controller();
-		$request  = new WP_REST_Request( 'GET' );
+		$request = new WP_REST_Request( 'GET' );
 		$request->set_param( 'context', 'view' );
-		$response = method_exists( $controller, 'prepare_item_for_response' )
-			? $controller->prepare_item_for_response( $order, $request )
-			: $controller->prepare_object_for_response( $order, $request );
+		$request->set_param( 'dp', null );
+		if ( class_exists( 'WC_REST_Orders_V2_Controller' ) ) {
+			$controller = new WC_REST_Orders_V2_Controller();
+			$ref = new ReflectionClass( $controller );
+			$prop = $ref->getProperty( 'request' );
+			$prop->setAccessible( true );
+			$prop->setValue( $controller, $request );
+		} else {
+			$controller = new WC_REST_Orders_Controller();
+		}
+		$response = $controller->prepare_object_for_response( $order, $request );
 		if ( is_wp_error( $response ) ) {
 			self::$last_error = $response->get_error_message();
 			return null;
