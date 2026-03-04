@@ -276,6 +276,82 @@
 		});
 	}
 
+	function syncInitBatch() {
+		var wrap = document.querySelector('.airomi-sync-init-wrap');
+		var btn = document.getElementById('airomi-sync-init-btn');
+		var stopBtn = document.getElementById('airomi-sync-init-stop-btn');
+		var progressWrap = document.getElementById('airomi-sync-init-progress');
+		var progressFill = progressWrap && progressWrap.querySelector('.airomi-sync-init-progress-fill');
+		var progressText = progressWrap && progressWrap.querySelector('.airomi-sync-init-progress-text');
+		if (!wrap || !btn || !stopBtn || !progressWrap) return;
+
+		var syncInitRunning = false;
+
+		stopBtn.addEventListener('click', function () {
+			syncInitRunning = false;
+		});
+
+		btn.addEventListener('click', function () {
+			var total = parseInt(wrap.getAttribute('data-init-total') || '0', 10) || 0;
+			if (total <= 0) return;
+			btn.disabled = true;
+			stopBtn.style.display = 'inline-block';
+			progressWrap.style.display = 'block';
+			if (progressFill) progressFill.style.width = '0%';
+			if (progressText) progressText.textContent = '0 / ' + total + ' synced';
+			syncInitRunning = true;
+
+			function runBatch() {
+				if (!syncInitRunning) {
+					btn.disabled = false;
+					stopBtn.style.display = 'none';
+					window.location.reload();
+					return;
+				}
+				var formData = new FormData();
+				formData.append('action', 'airomi_sync_init_batch');
+				formData.append('nonce', getNonce());
+
+				fetch(getAjaxUrl(), {
+					method: 'POST',
+					body: formData,
+					credentials: 'same-origin'
+				})
+					.then(function (r) { return r.json(); })
+					.then(function (data) {
+						if (!data.success || !data.data) {
+							btn.disabled = false;
+							stopBtn.style.display = 'none';
+							if (progressText) progressText.textContent = (data.data && data.data.message) ? data.data.message : 'Error';
+							return;
+						}
+						var d = data.data;
+						var remaining = d.remaining != null ? parseInt(d.remaining, 10) : 0;
+						var syncedSoFar = total - remaining;
+						var pct = total > 0 ? Math.min(100, Math.round((syncedSoFar / total) * 100)) : 0;
+						if (progressFill) progressFill.style.width = pct + '%';
+						if (progressText) progressText.textContent = syncedSoFar + ' / ' + total + ' synced';
+
+						if (d.done || !syncInitRunning) {
+							if (progressFill) progressFill.style.width = '100%';
+							if (progressText) progressText.textContent = 'Done. Reloading…';
+							btn.disabled = false;
+							stopBtn.style.display = 'none';
+							window.location.reload();
+							return;
+						}
+						runBatch();
+					})
+					.catch(function () {
+						btn.disabled = false;
+						stopBtn.style.display = 'none';
+						if (progressText) progressText.textContent = 'Request failed';
+					});
+			}
+			runBatch();
+		});
+	}
+
 	function ready(fn) {
 		if (document.readyState !== 'loading') {
 			fn();
@@ -285,6 +361,7 @@
 	}
 	ready(function () {
 		initOrdersBatch();
+		syncInitBatch();
 		bindViewDetails();
 		bindSyncOne();
 		bindBulkSync();

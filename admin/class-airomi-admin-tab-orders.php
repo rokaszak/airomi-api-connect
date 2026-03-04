@@ -26,6 +26,7 @@ class Airomi_Admin_Tab_Orders {
 
 		$table_name = airomi_table( AIROMI_TABLE_ORDER_SYNC );
 		$count      = (int) $GLOBALS['wpdb']->get_var( "SELECT COUNT(*) FROM `" . esc_sql( $table_name ) . "`" );
+		$init_count = (int) $GLOBALS['wpdb']->get_var( $GLOBALS['wpdb']->prepare( "SELECT COUNT(*) FROM `" . esc_sql( $table_name ) . "` WHERE sync_status = %s", AIROMI_STATUS_INIT ) );
 		?>
 		<div class="airomi-orders-tab">
 			<?php if ( $count === 0 ) : ?>
@@ -37,6 +38,19 @@ class Airomi_Admin_Tab_Orders {
 							<div class="airomi-progress-fill" style="height: 100%; width: 0%; background: #2271b1;"></div>
 						</div>
 						<p class="airomi-progress-text" style="margin-top: 0.25em;"></p>
+					</div>
+				</div>
+			<?php endif; ?>
+			<?php if ( $init_count > 0 ) : ?>
+				<div class="airomi-sync-init-wrap" style="margin-bottom: 1em;" data-init-total="<?php echo esc_attr( (string) $init_count ); ?>">
+					<p><?php echo esc_html( sprintf( _n( '%1$s order with status init waiting to be synced.', '%1$s orders with status init waiting to be synced.', $init_count, 'airomi-api-connect' ), number_format_i18n( $init_count ) ) ); ?></p>
+					<button type="button" class="button button-primary" id="airomi-sync-init-btn"><?php esc_html_e( 'Sync All Init Orders', 'airomi-api-connect' ); ?></button>
+					<button type="button" class="button" id="airomi-sync-init-stop-btn" style="display: none;"><?php esc_html_e( 'Stop', 'airomi-api-connect' ); ?></button>
+					<div id="airomi-sync-init-progress" style="display: none; margin-top: 0.5em; max-width: 400px;">
+						<div class="airomi-progress-bar" style="height: 24px; border: 1px solid #ccc; background: #f0f0f0;">
+							<div class="airomi-sync-init-progress-fill" style="height: 100%; width: 0%; background: #2271b1;"></div>
+						</div>
+						<p class="airomi-sync-init-progress-text" style="margin-top: 0.25em;"></p>
 					</div>
 				</div>
 			<?php endif; ?>

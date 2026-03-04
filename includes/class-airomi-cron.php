@@ -13,10 +13,6 @@ class Airomi_Cron {
 	}
 
 	public static function add_schedules( $schedules ) {
-		$schedules['every_1_minute'] = array(
-			'interval' => 60,
-			'display'  => __( 'Every 1 minute', 'airomi-api-connect' ),
-		);
 		$schedules['every_5_minutes'] = array(
 			'interval' => 5 * 60,
 			'display'  => __( 'Every 5 minutes', 'airomi-api-connect' ),
@@ -58,11 +54,6 @@ class Airomi_Cron {
 		if ( ! Airomi_Settings::is_sync_enabled() ) {
 			return;
 		}
-		$table = airomi_table( AIROMI_TABLE_ORDER_SYNC );
-		$ids   = $GLOBALS['wpdb']->get_col( $GLOBALS['wpdb']->prepare( "SELECT order_id FROM `" . esc_sql( $table ) . "` WHERE sync_status = %s", AIROMI_STATUS_FAILED ) );
-		if ( empty( $ids ) ) {
-			return;
-		}
-		Airomi_Sync::sync_orders( array_map( 'intval', $ids ) );
+		Airomi_Sync::sync_batch( AIROMI_STATUS_FAILED, 50 );
 	}
 }

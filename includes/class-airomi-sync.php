@@ -77,6 +77,30 @@ class Airomi_Sync {
 		}
 	}
 
+	public static function sync_batch( $status, $limit = 10 ) {
+		$table = airomi_table( AIROMI_TABLE_ORDER_SYNC );
+		$wpdb  = $GLOBALS['wpdb'];
+		$ids   = $wpdb->get_col( $wpdb->prepare(
+			"SELECT order_id FROM `" . esc_sql( $table ) . "` WHERE sync_status = %s ORDER BY order_id ASC LIMIT %d",
+			$status,
+			$limit
+		) );
+		$synced = 0;
+		foreach ( $ids as $order_id ) {
+			self::sync_order( (int) $order_id );
+			$synced++;
+		}
+		$remaining = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM `" . esc_sql( $table ) . "` WHERE sync_status = %s",
+			$status
+		) );
+		return array(
+			'synced'    => $synced,
+			'remaining' => $remaining,
+			'done'      => $remaining === 0,
+		);
+	}
+
 	private static function build_request_headers() {
 		$headers = array(
 			'Content-Type' => 'application/json',

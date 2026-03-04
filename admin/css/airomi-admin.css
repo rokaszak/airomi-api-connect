@@ -53,3 +53,12 @@
 .airomi-progress-fill {
 	transition: width 0.2s ease;
 }
+
+.airomi-sync-init-wrap .button-primary {
+	margin-bottom: 0;
+	margin-right: 8px;
+}
+
+.airomi-sync-init-progress-fill {
+	transition: width 0.2s ease;
+}

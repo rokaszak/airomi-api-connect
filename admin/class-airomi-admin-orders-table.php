@@ -47,7 +47,7 @@ class Airomi_Admin_Orders_Table extends WP_List_Table {
 
 	public function prepare_items() {
 		$table        = airomi_table( AIROMI_TABLE_ORDER_SYNC );
-		$per_page     = 20;
+		$per_page     = 200;
 		$status_filter = isset( $_GET['airomi_status'] ) ? sanitize_key( $_GET['airomi_status'] ) : '';
 		$orderby      = isset( $_GET['orderby'] ) ? sanitize_key( $_GET['orderby'] ) : 'order_id';
 		$order        = isset( $_GET['order'] ) && strtoupper( $_GET['order'] ) === 'ASC' ? 'ASC' : 'DESC';
