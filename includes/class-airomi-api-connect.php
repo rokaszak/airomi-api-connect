@@ -36,8 +36,8 @@ final class Airomi_API_Connect {
 	 * Activation hook: run schema install.
 	 */
 	public static function activate() {
-		require_once AIROMI_API_CONNECT_PATH . 'includes/class-airomi-schema.php';
-		require_once AIROMI_API_CONNECT_PATH . 'includes/class-airomi-install.php';
+		require_once airomi_api_connect_path() . 'includes/class-airomi-schema.php';
+		require_once airomi_api_connect_path() . 'includes/class-airomi-install.php';
 		airomi_maybe_install_or_upgrade_schema();
 	}
 
@@ -47,8 +47,8 @@ final class Airomi_API_Connect {
 	}
 
 	private function maybe_upgrade_schema() {
-		require_once AIROMI_API_CONNECT_PATH . 'includes/class-airomi-schema.php';
-		require_once AIROMI_API_CONNECT_PATH . 'includes/class-airomi-install.php';
+		require_once airomi_api_connect_path() . 'includes/class-airomi-schema.php';
+		require_once airomi_api_connect_path() . 'includes/class-airomi-install.php';
 		$stored = (int) get_option( 'airomi_db_version', 0 );
 		if ( $stored < AIROMI_DB_VERSION ) {
 			airomi_maybe_install_or_upgrade_schema();
@@ -59,7 +59,7 @@ final class Airomi_API_Connect {
 		if ( ! is_admin() ) {
 			return;
 		}
-		require_once AIROMI_API_CONNECT_PATH . 'admin/class-airomi-admin-settings.php';
+		require_once airomi_api_connect_path() . 'admin/class-airomi-admin-settings.php';
 		Airomi_Admin_Settings::init();
 	}
 }
