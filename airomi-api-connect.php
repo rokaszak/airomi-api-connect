@@ -3,7 +3,7 @@
  * Plugin Name: Airomi API Connect
  * Plugin URI: https://proven.lt
  * Description: Connect your store to Airomi services.
- * Version: 1.1.5
+ * Version: 1.1.6
  * Author: Rokas Zakarauskas
  * Author URI: https://proven.lt
  * License: GPL v2 or later
@@ -19,7 +19,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-const AIROMI_API_CONNECT_VERSION = '1.1.5';
+const AIROMI_API_CONNECT_VERSION = '1.1.6';
 const AIROMI_API_CONNECT_FILE    = __FILE__;
 const AIROMI_API_CONNECT_SLUG    = 'airomi-api-connect';
 

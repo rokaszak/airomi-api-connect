@@ -14,37 +14,59 @@ class Airomi_Order_Hooks {
 	}
 
 	public static function on_new_order( $order_id, $order = null ) {
-		if ( ! Airomi_Settings::is_sync_enabled() ) {
-			return;
-		}
 		$order_id = (int) $order_id;
 		self::ensure_row_exists( $order_id );
 		if ( isset( self::$synced_this_request[ $order_id ] ) ) {
 			return;
 		}
 		self::$synced_this_request[ $order_id ] = true;
-		Airomi_Sync::sync_order( $order_id );
+		if ( Airomi_Settings::is_sync_enabled() ) {
+			Airomi_Sync::sync_order( $order_id );
+		} else {
+			Airomi_Sync::mark_failed_sync_disabled( $order_id );
+		}
 	}
 
 	public static function on_update_order( $order_id, $order = null ) {
-		if ( ! Airomi_Settings::is_sync_enabled() ) {
-			return;
-		}
 		$order_id = (int) $order_id;
 		self::ensure_row_exists( $order_id );
 		if ( isset( self::$synced_this_request[ $order_id ] ) ) {
 			return;
 		}
 		self::$synced_this_request[ $order_id ] = true;
-		Airomi_Sync::sync_order( $order_id );
+		if ( Airomi_Settings::is_sync_enabled() ) {
+			Airomi_Sync::sync_order( $order_id );
+		} else {
+			Airomi_Sync::mark_failed_sync_disabled( $order_id );
+		}
 	}
 
 	public static function on_delete_order( $order_id, $order = null ) {
-		self::remove_row( (int) $order_id );
+		$order_id = (int) $order_id;
+		self::ensure_row_exists( $order_id );
+		if ( isset( self::$synced_this_request[ $order_id ] ) ) {
+			return;
+		}
+		self::$synced_this_request[ $order_id ] = true;
+		if ( Airomi_Settings::is_sync_enabled() ) {
+			Airomi_Sync::sync_order( $order_id );
+		} else {
+			Airomi_Sync::mark_failed_sync_disabled( $order_id );
+		}
 	}
 
 	public static function on_trash_order( $order_id, $order = null ) {
-		self::remove_row( (int) $order_id );
+		$order_id = (int) $order_id;
+		self::ensure_row_exists( $order_id );
+		if ( isset( self::$synced_this_request[ $order_id ] ) ) {
+			return;
+		}
+		self::$synced_this_request[ $order_id ] = true;
+		if ( Airomi_Settings::is_sync_enabled() ) {
+			Airomi_Sync::sync_order( $order_id );
+		} else {
+			Airomi_Sync::mark_failed_sync_disabled( $order_id );
+		}
 	}
 
 	public static function ensure_row_exists( $order_id ) {

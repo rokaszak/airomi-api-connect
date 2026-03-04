@@ -19,12 +19,16 @@ class Airomi_Sync {
 
 		$payload = Airomi_Order_Payload::build( $order_id );
 		if ( $payload === null ) {
-			$message = Airomi_Order_Payload::get_last_error();
-			if ( $message === '' ) {
-				$message = __( 'Order or payload unavailable.', 'airomi-api-connect' );
+			if ( Airomi_Order_Payload::is_order_not_found() ) {
+				$payload = array( 'id' => $order_id, 'status' => 'deleted' );
+			} else {
+				$message = Airomi_Order_Payload::get_last_error();
+				if ( $message === '' ) {
+					$message = __( 'Order or payload unavailable.', 'airomi-api-connect' );
+				}
+				self::update_row_failed( $order_id, null, $message, true );
+				return false;
 			}
-			self::update_row_failed( $order_id, null, $message, true );
-			return false;
 		}
 
 		$payload_json = wp_json_encode( $payload );
@@ -99,6 +103,10 @@ class Airomi_Sync {
 			'remaining' => $remaining,
 			'done'      => $remaining === 0,
 		);
+	}
+
+	public static function mark_failed_sync_disabled( $order_id ) {
+		self::update_row_failed( (int) $order_id, null, __( 'Sync not enabled.', 'airomi-api-connect' ), false );
 	}
 
 	private static function build_request_headers() {
