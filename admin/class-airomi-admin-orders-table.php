@@ -141,10 +141,8 @@ class Airomi_Admin_Orders_Table extends WP_List_Table {
 
 	protected function column_actions( $item ) {
 		$order_id = (int) $item['order_id'];
-		$base = admin_url( 'admin.php?page=' . Airomi_Admin_Settings::PAGE_SLUG . '&tab=orders' );
-		$sync_url = wp_nonce_url( add_query_arg( array( 'airomi_sync_order' => $order_id ), $base ), 'airomi_sync_order_' . $order_id );
 		$actions = array(
-			'sync'  => '<a href="' . esc_url( $sync_url ) . '">' . esc_html__( 'Sync Now', 'airomi-api-connect' ) . '</a>',
+			'sync'  => '<button type="button" class="button button-small airomi-sync-one" data-order-id="' . esc_attr( $order_id ) . '">' . esc_html__( 'Sync Now', 'airomi-api-connect' ) . '</button>',
 			'view'  => '<button type="button" class="button button-small airomi-view-details" data-order-id="' . esc_attr( $order_id ) . '">' . esc_html__( 'View Details', 'airomi-api-connect' ) . '</button>',
 		);
 		return implode( ' ', $actions);

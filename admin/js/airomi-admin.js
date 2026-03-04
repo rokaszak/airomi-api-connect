@@ -160,6 +160,122 @@
 		});
 	}
 
+	function getSyncProgressEls() {
+		var wrap = document.getElementById('airomi-sync-progress');
+		return {
+			wrap: wrap,
+			fill: wrap ? wrap.querySelector('.airomi-sync-progress-fill') : null,
+			text: wrap ? wrap.querySelector('.airomi-sync-progress-text') : null
+		};
+	}
+
+	function showSyncProgress(pct, text) {
+		var els = getSyncProgressEls();
+		if (!els.wrap) return;
+		els.wrap.style.display = 'block';
+		if (els.fill) els.fill.style.width = (pct != null ? pct : 0) + '%';
+		if (els.text) els.text.textContent = text || '';
+	}
+
+	function hideSyncProgress() {
+		var els = getSyncProgressEls();
+		if (els.wrap) els.wrap.style.display = 'none';
+	}
+
+	function syncOneOrder(orderId) {
+		return new Promise(function (resolve, reject) {
+			var formData = new FormData();
+			formData.append('action', 'airomi_sync_order');
+			formData.append('nonce', getNonce());
+			formData.append('order_id', String(orderId));
+			fetch(getAjaxUrl(), {
+				method: 'POST',
+				body: formData,
+				credentials: 'same-origin'
+			})
+				.then(function (r) { return r.json(); })
+				.then(function (data) {
+					if (data.success) resolve(data.data);
+					else reject(data.data && data.data.message ? new Error(data.data.message) : new Error('Sync failed'));
+				})
+				.catch(reject);
+		});
+	}
+
+	function bindSyncOne() {
+		document.addEventListener('click', function (e) {
+			var btn = e.target && e.target.closest && e.target.closest('.airomi-sync-one');
+			if (!btn) return;
+			e.preventDefault();
+			var orderId = btn.getAttribute && btn.getAttribute('data-order-id');
+			if (!orderId) return;
+			orderId = parseInt(orderId, 10);
+			btn.disabled = true;
+			showSyncProgress(0, 'Syncing order #' + orderId + '…');
+			syncOneOrder(orderId)
+				.then(function () {
+					showSyncProgress(100, 'Done. Reloading…');
+					window.location.reload();
+				})
+				.catch(function (err) {
+					btn.disabled = false;
+					showSyncProgress(null, err.message || 'Sync failed');
+					setTimeout(hideSyncProgress, 3000);
+				});
+		});
+	}
+
+	function bindBulkSync() {
+		var form = document.getElementById('airomi-orders-form');
+		if (!form) return;
+		form.addEventListener('submit', function (e) {
+			var action = form.querySelector('#bulk-action-selector-top');
+			var action2 = form.querySelector('#bulk-action-selector-bottom');
+			var val = (action && action.value) || (action2 && action2.value) || '';
+			if (val !== 'airomi_sync') return;
+			var checkboxes = form.querySelectorAll('input[name="order_ids[]"]:checked');
+			if (!checkboxes.length) return;
+			e.preventDefault();
+			var orderIds = [];
+			for (var i = 0; i < checkboxes.length; i++) {
+				var id = parseInt(checkboxes[i].value, 10);
+				if (id) orderIds.push(id);
+			}
+			if (!orderIds.length) return;
+			var total = orderIds.length;
+			var current = 0;
+			showSyncProgress(0, '0 / ' + total + ' synced');
+			var bulkActionsTop = form.querySelector('.tablenav.top .bulkactions');
+			var bulkActionsBottom = form.querySelector('.tablenav.bottom .bulkactions');
+			if (bulkActionsTop) bulkActionsTop.style.pointerEvents = 'none';
+			if (bulkActionsBottom) bulkActionsBottom.style.pointerEvents = 'none';
+			function runNext() {
+				if (current >= orderIds.length) {
+					showSyncProgress(100, 'Done. Reloading…');
+					if (bulkActionsTop) bulkActionsTop.style.pointerEvents = '';
+					if (bulkActionsBottom) bulkActionsBottom.style.pointerEvents = '';
+					window.location.reload();
+					return;
+				}
+				var id = orderIds[current];
+				syncOneOrder(id)
+					.then(function () {
+						current++;
+						var pct = total > 0 ? Math.round((current / total) * 100) : 0;
+						showSyncProgress(pct, current + ' / ' + total + ' synced');
+						runNext();
+					})
+					.catch(function (err) {
+						current++;
+						var pct = total > 0 ? Math.round((current / total) * 100) : 0;
+						showSyncProgress(pct, current + ' / ' + total + ' (' + (err.message || 'error') + '). Continuing…');
+						runNext();
+					});
+			}
+			runNext();
+		});
+	}
+
 	function ready(fn) {
 		if (document.readyState !== 'loading') {
 			fn();
@@ -170,5 +286,7 @@
 	ready(function () {
 		initOrdersBatch();
 		bindViewDetails();
+		bindSyncOne();
+		bindBulkSync();
 	});
 })();
