@@ -85,6 +85,12 @@ class Airomi_Admin_Orders_Table extends WP_List_Table {
 		}
 
 		$this->items = $items;
+		$this->_column_headers = array(
+			$this->get_columns(),
+			array(),
+			$this->get_sortable_columns(),
+			'order_id',
+		);
 		$this->set_pagination_args( array(
 			'total_items' => $total_items,
 			'per_page'   => $per_page,
