@@ -7,11 +7,11 @@ class Airomi_Order_Hooks {
 	private static $synced_this_request = array();
 
 	public static function init() {
-		add_action( 'woocommerce_new_order', array( __CLASS__, 'handle_order_event' ), 10, 1 );
-		add_action( 'woocommerce_update_order', array( __CLASS__, 'handle_order_event' ), 10, 1 );
-		add_action( 'woocommerce_before_delete_order', array( __CLASS__, 'handle_order_event' ), 10, 1 );
-		add_action( 'woocommerce_trash_order', array( __CLASS__, 'handle_order_event' ), 10, 1 );
-		add_action( 'untrashed_post', array( __CLASS__, 'handle_untrashed_post' ), 10, 1 );
+		add_action( 'woocommerce_new_order', array( __CLASS__, 'handle_order_event' ), 100, 1 );
+		add_action( 'woocommerce_update_order', array( __CLASS__, 'handle_order_event' ), 100, 1 );
+		add_action( 'woocommerce_delete_order', array( __CLASS__, 'handle_order_event' ), 100, 1 );
+		add_action( 'woocommerce_trash_order', array( __CLASS__, 'handle_order_event' ), 100, 1 );
+		add_action( 'untrashed_post', array( __CLASS__, 'handle_untrashed_post' ), 100, 1 );
 	}
 
 	public static function handle_order_event( $order_id ) {
