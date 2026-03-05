@@ -4,27 +4,25 @@ defined( 'ABSPATH' ) || exit;
 
 class Airomi_Sync {
 
-	const BATCH_MAX_ORDERS = 100;
+	const BATCH_MAX_ORDERS   = 100;
+	const FIRST_ATTEMPT_TIMEOUT = 0.5;
 
-	private static $curl_ipv4_callback = null;
-
-	private static function get_curl_ipv4_callback() {
-		if ( self::$curl_ipv4_callback === null ) {
-			self::$curl_ipv4_callback = function ( $handle ) {
-				curl_setopt( $handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4 );
-			};
+	private static function is_timeout_error( $response ) {
+		if ( ! is_wp_error( $response ) ) {
+			return false;
 		}
-		return self::$curl_ipv4_callback;
+		$msg = $response->get_error_message();
+		return strpos( $msg, 'timed out' ) !== false || strpos( $msg, 'timeout' ) !== false;
 	}
 
 	private static function do_remote_request( $url, $request_args ) {
-		if ( session_status() === PHP_SESSION_ACTIVE ) {
-			session_write_close();
-		}
-		$cb = self::get_curl_ipv4_callback();
-		add_action( 'http_api_curl', $cb, 10, 1 );
+		$user_timeout = isset( $request_args['timeout'] ) ? (int) $request_args['timeout'] : 5;
+		$request_args['timeout'] = self::FIRST_ATTEMPT_TIMEOUT;
 		$response = wp_remote_request( $url, $request_args );
-		remove_action( 'http_api_curl', $cb, 10 );
+		if ( self::is_timeout_error( $response ) ) {
+			$request_args['timeout'] = $user_timeout > 0 ? $user_timeout : 5;
+			$response = wp_remote_request( $url, $request_args );
+		}
 		return $response;
 	}
 

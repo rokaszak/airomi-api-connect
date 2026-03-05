@@ -13,6 +13,28 @@ class Airomi_Order_Hooks {
 		add_action( 'woocommerce_delete_order', array( __CLASS__, 'handle_order_event' ), 100, 1 );
 		add_action( 'woocommerce_trash_order', array( __CLASS__, 'handle_order_event' ), 100, 1 );
 		add_action( 'woocommerce_untrash_order', array( __CLASS__, 'handle_order_event' ), 100, 1 );
+		add_filter('woocommerce_rest_prepare_shop_order_object', function($response, $order) {
+			$line_items = $response->data['line_items'];
+		
+			foreach ($order->get_items() as $item_id => $item) {
+				foreach ($line_items as &$line_item) {
+					if ($line_item['id'] !== $item_id) continue;
+		
+					$product_id = $item->get_product_id();
+					if ($product_id) {
+						$terms = get_the_terms($product_id, 'product_cat');
+						$line_item['category_slugs'] = (!empty($terms) && !is_wp_error($terms))
+							? array_values(array_map(fn($t) => $t->slug, $terms))
+							: [];
+					} else {
+						$line_item['category_slugs'] = [];
+					}
+				}
+			}
+		
+			$response->data['line_items'] = $line_items;
+			return $response;
+		}, 10, 2);
 	}
 
 	public static function handle_order_event( $order_id ) {
