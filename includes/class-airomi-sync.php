@@ -4,7 +4,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Airomi_Sync {
 
-	public static function sync_order( $order_id ) {
+	public static function sync_order( $order_id, $order = null ) {
 		$order_id = (int) $order_id;
 		$table    = airomi_table( AIROMI_TABLE_ORDER_SYNC );
 		$url      = Airomi_Settings::get_webhook_url();
@@ -17,7 +17,7 @@ class Airomi_Sync {
 			return false;
 		}
 
-		$payload = Airomi_Order_Payload::build( $order_id );
+		$payload = Airomi_Order_Payload::build( $order_id, $order );
 		if ( $payload === null ) {
 			if ( Airomi_Order_Payload::is_order_not_found() ) {
 				$payload = array( 'id' => $order_id, 'status' => 'deleted' );

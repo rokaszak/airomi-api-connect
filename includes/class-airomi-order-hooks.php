@@ -7,44 +7,26 @@ class Airomi_Order_Hooks {
 	private static $synced_this_request = array();
 
 	public static function init() {
-		add_action( 'woocommerce_new_order', array( __CLASS__, 'handle_order_event' ), 100, 1 );
-		add_action( 'woocommerce_update_order', array( __CLASS__, 'handle_order_event' ), 100, 1 );
+		add_action( 'woocommerce_new_order', array( __CLASS__, 'handle_order_event' ), 100, 2 );
+		add_action( 'woocommerce_update_order', array( __CLASS__, 'handle_order_event' ), 100, 2 );
 		add_action( 'woocommerce_delete_order', array( __CLASS__, 'handle_order_event' ), 100, 1 );
 		add_action( 'woocommerce_trash_order', array( __CLASS__, 'handle_order_event' ), 100, 1 );
-		add_action( 'untrashed_post', array( __CLASS__, 'handle_untrashed_post' ), 100, 1 );
+		add_action( 'woocommerce_untrash_order', array( __CLASS__, 'handle_order_event' ), 100, 2 );
 	}
 
-	public static function handle_order_event( $order_id ) {
-		$order_id = (int) $order_id;
-		self::ensure_row_exists( $order_id );
-		if ( isset( self::$synced_this_request[ $order_id ] ) ) {
-			return;
-		}
-		self::$synced_this_request[ $order_id ] = true;
-		if ( Airomi_Settings::is_sync_enabled() ) {
-			Airomi_Sync::sync_order( $order_id );
+	public static function handle_order_event( $order_id, $order = null ) {
+		if ( $order instanceof WC_Order ) {
+			$order_id = (int) $order->get_id();
 		} else {
-			Airomi_Sync::mark_failed_sync_disabled( $order_id );
+			$order_id = (int) $order_id;
 		}
-	}
-
-	public static function handle_untrashed_post( $post_id ) {
-		$post = get_post( $post_id );
-		if ( ! $post || $post->post_type !== 'shop_order' ) {
-			return;
-		}
-		$order = wc_get_order( $post_id );
-		if ( ! $order instanceof WC_Order ) {
-			return;
-		}
-		$order_id = (int) $order->get_id();
 		self::ensure_row_exists( $order_id );
 		if ( isset( self::$synced_this_request[ $order_id ] ) ) {
 			return;
 		}
 		self::$synced_this_request[ $order_id ] = true;
 		if ( Airomi_Settings::is_sync_enabled() ) {
-			Airomi_Sync::sync_order( $order_id );
+			Airomi_Sync::sync_order( $order_id, $order );
 		} else {
 			Airomi_Sync::mark_failed_sync_disabled( $order_id );
 		}
