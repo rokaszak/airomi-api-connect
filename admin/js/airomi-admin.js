@@ -225,6 +225,30 @@
 		});
 	}
 
+	var BULK_BATCH_SIZE = 100;
+
+	function syncBulkOrders(orderIds) {
+		return new Promise(function (resolve, reject) {
+			var formData = new FormData();
+			formData.append('action', 'airomi_sync_bulk');
+			formData.append('nonce', getNonce());
+			for (var i = 0; i < orderIds.length; i++) {
+				formData.append('order_ids[]', String(orderIds[i]));
+			}
+			fetch(getAjaxUrl(), {
+				method: 'POST',
+				body: formData,
+				credentials: 'same-origin'
+			})
+				.then(function (r) { return r.json(); })
+				.then(function (data) {
+					if (data.success) resolve(data.data);
+					else reject(data.data && data.data.message ? new Error(data.data.message) : new Error('Sync failed'));
+				})
+				.catch(reject);
+		});
+	}
+
 	function bindBulkSync() {
 		var form = document.getElementById('airomi-orders-form');
 		if (!form) return;
@@ -243,36 +267,47 @@
 			}
 			if (!orderIds.length) return;
 			var total = orderIds.length;
-			var current = 0;
+			var processed = 0;
+			var totalSynced = 0;
+			var totalFailed = 0;
+			var chunks = [];
+			for (var j = 0; j < orderIds.length; j += BULK_BATCH_SIZE) {
+				chunks.push(orderIds.slice(j, j + BULK_BATCH_SIZE));
+			}
 			showSyncProgress(0, '0 / ' + total + ' synced');
 			var bulkActionsTop = form.querySelector('.tablenav.top .bulkactions');
 			var bulkActionsBottom = form.querySelector('.tablenav.bottom .bulkactions');
 			if (bulkActionsTop) bulkActionsTop.style.pointerEvents = 'none';
 			if (bulkActionsBottom) bulkActionsBottom.style.pointerEvents = 'none';
-			function runNext() {
-				if (current >= orderIds.length) {
-					showSyncProgress(100, 'Done. Reloading…');
+
+			function runNextChunk() {
+				if (chunks.length === 0) {
+					showSyncProgress(100, 'Done. ' + totalSynced + ' synced, ' + totalFailed + ' failed. Reloading…');
 					if (bulkActionsTop) bulkActionsTop.style.pointerEvents = '';
 					if (bulkActionsBottom) bulkActionsBottom.style.pointerEvents = '';
 					window.location.reload();
 					return;
 				}
-				var id = orderIds[current];
-				syncOneOrder(id)
-					.then(function () {
-						current++;
-						var pct = total > 0 ? Math.round((current / total) * 100) : 0;
-						showSyncProgress(pct, current + ' / ' + total + ' synced');
-						runNext();
+				var chunk = chunks.shift();
+				syncBulkOrders(chunk)
+					.then(function (data) {
+						var synced = data.synced != null ? data.synced : 0;
+						var failed = data.failed != null ? data.failed : 0;
+						totalSynced += synced;
+						totalFailed += failed;
+						processed += chunk.length;
+						var pct = total > 0 ? Math.min(100, Math.round((processed / total) * 100)) : 0;
+						showSyncProgress(pct, processed + ' / ' + total + ' synced');
+						setTimeout(runNextChunk, 150);
 					})
 					.catch(function (err) {
-						current++;
-						var pct = total > 0 ? Math.round((current / total) * 100) : 0;
-						showSyncProgress(pct, current + ' / ' + total + ' (' + (err.message || 'error') + '). Continuing…');
-						runNext();
+						if (bulkActionsTop) bulkActionsTop.style.pointerEvents = '';
+						if (bulkActionsBottom) bulkActionsBottom.style.pointerEvents = '';
+						showSyncProgress(null, (err.message || 'Sync failed') + (processed > 0 ? ' (' + processed + ' / ' + total + ' done)' : ''));
+						setTimeout(hideSyncProgress, 4000);
 					});
 			}
-			runNext();
+			runNextChunk();
 		});
 	}
 
@@ -340,7 +375,7 @@
 							window.location.reload();
 							return;
 						}
-						runBatch();
+						setTimeout(runBatch, 150);
 					})
 					.catch(function () {
 						btn.disabled = false;

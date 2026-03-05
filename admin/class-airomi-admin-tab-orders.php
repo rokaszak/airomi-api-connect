@@ -11,7 +11,7 @@ class Airomi_Admin_Tab_Orders {
 				$ids = array_map( 'absint', (array) $_GET['order_ids'] );
 				$ids = array_filter( $ids );
 				if ( $ids && class_exists( 'Airomi_Sync' ) ) {
-					Airomi_Sync::sync_orders( $ids );
+					Airomi_Sync::sync_orders_batch( $ids );
 				}
 				wp_safe_redirect( remove_query_arg( array( 'action', 'action2', 'order_ids', '_wpnonce' ) ) );
 				exit;
