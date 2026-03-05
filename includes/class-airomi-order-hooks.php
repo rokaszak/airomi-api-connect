@@ -23,11 +23,11 @@ class Airomi_Order_Hooks {
 					$product_id = $item->get_product_id();
 					if ($product_id) {
 						$terms = get_the_terms($product_id, 'product_cat');
-						$line_item['category_slugs'] = (!empty($terms) && !is_wp_error($terms))
-							? array_values(array_map(fn($t) => $t->slug, $terms))
+						$line_item['categories'] = (!empty($terms) && !is_wp_error($terms))
+							? array_values(array_map(fn($t) => ['name' => $t->name, 'slug' => $t->slug], $terms))
 							: [];
 					} else {
-						$line_item['category_slugs'] = [];
+						$line_item['categories'] = [];
 					}
 				}
 			}
