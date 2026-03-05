@@ -15,13 +15,11 @@ class Airomi_Order_Payload {
 		return self::$order_not_found;
 	}
 
-	public static function build( $order_id, $order = null ) {
+	public static function build( $order_id ) {
 		self::$last_error = '';
 		self::$order_not_found = false;
 		$order_id = (int) $order_id;
-		if ( ! $order instanceof WC_Order ) {
-			$order = wc_get_order( $order_id );
-		}
+		$order = wc_get_order( $order_id );
 		if ( ! $order instanceof WC_Order ) {
 			self::$order_not_found = true;
 			self::$last_error = __( 'Order not found.', 'airomi-api-connect' );
