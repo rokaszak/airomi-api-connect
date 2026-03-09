@@ -26,16 +26,12 @@
 			if (progressFill) progressFill.style.width = '0%';
 			if (progressText) progressText.textContent = '';
 
-			var totalSoFar = 0;
 			var total = 0;
-			var page = 1;
 
 			function runBatch() {
 				var formData = new FormData();
 				formData.append('action', 'airomi_init_orders');
 				formData.append('nonce', getNonce());
-				formData.append('page', String(page));
-				formData.append('total_so_far', String(totalSoFar));
 
 				fetch(getAjaxUrl(), {
 					method: 'POST',
@@ -45,19 +41,21 @@
 					.then(function (r) { return r.json(); })
 					.then(function (data) {
 						if (data.success && data.data) {
-							totalSoFar += data.data.processed || 0;
-							if (data.data.total != null && total === 0) total = data.data.total;
-							var pct = total > 0 ? Math.min(100, Math.round((totalSoFar / total) * 100)) : 0;
+							var d = data.data;
+							var inserted = d.inserted != null ? parseInt(d.inserted, 10) : 0;
+							var remaining = d.remaining != null ? parseInt(d.remaining, 10) : 0;
+							if (total === 0) total = inserted + remaining;
+							var processed = total > 0 ? total - remaining : inserted;
+							var pct = total > 0 ? Math.min(100, Math.round((processed / total) * 100)) : 0;
 							if (progressFill) progressFill.style.width = pct + '%';
-							if (progressText) progressText.textContent = totalSoFar + ' / ' + total + ' processed';
+							if (progressText) progressText.textContent = processed + ' / ' + total + ' initialized';
 
-							if (data.data.done) {
+							if (d.done) {
 								if (progressFill) progressFill.style.width = '100%';
 								if (progressText) progressText.textContent = 'Done. Reloading…';
 								window.location.reload();
 								return;
 							}
-							page = data.data.next_page || (page + 1);
 							runBatch();
 						} else {
 							btn.disabled = false;

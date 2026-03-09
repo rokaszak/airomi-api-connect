@@ -26,57 +26,16 @@ class Airomi_Ajax {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'airomi-api-connect' ) ) );
 		}
 
-		$page        = isset( $_POST['page'] ) ? max( 1, (int) $_POST['page'] ) : 1;
-		$total_so_far = isset( $_POST['total_so_far'] ) ? max( 0, (int) $_POST['total_so_far'] ) : 0;
-		$per_page    = self::BATCH_SIZE;
-		$offset      = ( $page - 1 ) * $per_page;
+		$missing_ids = Airomi_Order_Hooks::get_missing_order_ids( self::BATCH_SIZE );
+		$inserted    = Airomi_Order_Hooks::bulk_insert_rows( $missing_ids );
+		$remaining   = Airomi_Order_Hooks::get_missing_orders_count();
+		$done        = $remaining === 0;
 
-		$args = array(
-			'limit'  => $per_page,
-			'offset' => $offset,
-			'return' => 'ids',
-			'status' => 'any',
-			'type'   => 'shop_order',
-		);
-		$order_ids = wc_get_orders( $args );
-		$processed = 0;
-		foreach ( $order_ids as $order_id ) {
-			if ( Airomi_Order_Hooks::ensure_row_exists( $order_id ) ) {
-				$processed++;
-			}
-		}
-		$total_wc_orders = self::get_total_orders_count();
-		$total_missing   = ( $page === 1 ) ? Airomi_Order_Hooks::get_missing_orders_count() : null;
-		$scanned_all     = count( $order_ids ) === 0 || ( $offset + count( $order_ids ) ) >= $total_wc_orders;
-		$all_missing_done = $total_missing !== null && $total_missing > 0 && ( $total_so_far + $processed ) >= $total_missing;
-		$no_missing_to_init = $total_missing !== null && $total_missing === 0;
-		$done = $scanned_all || $all_missing_done || $no_missing_to_init;
-		$response = array(
-			'processed' => $processed,
-			'total'     => $total_missing !== null ? $total_missing : 0,
+		wp_send_json_success( array(
+			'inserted'  => $inserted,
+			'remaining' => $remaining,
 			'done'      => $done,
-			'next_page' => $done ? 0 : $page + 1,
-		);
-		wp_send_json_success( $response );
-	}
-
-	private static function get_total_orders_count() {
-		$total = 0;
-		$per   = 500;
-		$page  = 1;
-		do {
-			$ids = wc_get_orders( array(
-				'limit'  => $per,
-				'offset' => ( $page - 1 ) * $per,
-				'return' => 'ids',
-				'status' => 'any',
-				'type'   => 'shop_order',
-			) );
-			$c    = is_array( $ids ) ? count( $ids ) : 0;
-			$total += $c;
-			$page++;
-		} while ( $c === $per );
-		return $total;
+		) );
 	}
 
 	public static function ajax_get_order_detail() {

@@ -78,32 +78,72 @@ class Airomi_Order_Hooks {
 		$GLOBALS['wpdb']->delete( airomi_table( AIROMI_TABLE_ORDER_SYNC ), array( 'order_id' => $order_id ), array( '%d' ) );
 	}
 
+	private static function is_hpos_enabled() {
+		if ( ! class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' ) || ! method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'custom_orders_table_usage_is_enabled' ) ) {
+			return false;
+		}
+		return \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+	}
+
 	public static function get_missing_orders_count() {
-		$table   = airomi_table( AIROMI_TABLE_ORDER_SYNC );
-		$missing = 0;
-		$per     = 500;
-		$page    = 1;
-		do {
-			$order_ids = wc_get_orders( array(
-				'limit'  => $per,
-				'offset' => ( $page - 1 ) * $per,
-				'return' => 'ids',
-				'status' => 'any',
-				'type'   => 'shop_order',
-			) );
-			$order_ids = is_array( $order_ids ) ? $order_ids : array();
-			if ( empty( $order_ids ) ) {
-				break;
-			}
-			$placeholders = implode( ',', array_fill( 0, count( $order_ids ), '%d' ) );
-			$existing    = $GLOBALS['wpdb']->get_col( $GLOBALS['wpdb']->prepare(
-				"SELECT order_id FROM `" . esc_sql( $table ) . "` WHERE order_id IN ($placeholders)",
-				...$order_ids
-			) );
-			$existing   = is_array( $existing ) ? array_map( 'intval', $existing ) : array();
-			$missing   += count( $order_ids ) - count( array_intersect( $order_ids, $existing ) );
-			$page++;
-		} while ( count( $order_ids ) === $per );
-		return $missing;
+		$wpdb  = $GLOBALS['wpdb'];
+		$table = airomi_table( AIROMI_TABLE_ORDER_SYNC );
+		if ( self::is_hpos_enabled() ) {
+			$orders_table = $wpdb->prefix . 'wc_orders';
+			$count = (int) $wpdb->get_var(
+				"SELECT COUNT(*) FROM `" . esc_sql( $orders_table ) . "` o " .
+				"LEFT JOIN `" . esc_sql( $table ) . "` s ON o.id = s.order_id " .
+				"WHERE o.type = 'shop_order' AND s.order_id IS NULL"
+			);
+		} else {
+			$count = (int) $wpdb->get_var(
+				"SELECT COUNT(*) FROM `" . $wpdb->posts . "` p " .
+				"LEFT JOIN `" . esc_sql( $table ) . "` s ON p.ID = s.order_id " .
+				"WHERE p.post_type = 'shop_order' AND s.order_id IS NULL"
+			);
+		}
+		return $count;
+	}
+
+	public static function get_missing_order_ids( $limit ) {
+		$limit = max( 1, min( 500, (int) $limit ) );
+		$wpdb  = $GLOBALS['wpdb'];
+		$table = airomi_table( AIROMI_TABLE_ORDER_SYNC );
+		if ( self::is_hpos_enabled() ) {
+			$orders_table = $wpdb->prefix . 'wc_orders';
+			$ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT o.id FROM `" . esc_sql( $orders_table ) . "` o " .
+					"LEFT JOIN `" . esc_sql( $table ) . "` s ON o.id = s.order_id " .
+					"WHERE o.type = 'shop_order' AND s.order_id IS NULL ORDER BY o.id ASC LIMIT %d",
+					$limit
+				)
+			);
+		} else {
+			$ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT p.ID FROM `" . $wpdb->posts . "` p " .
+					"LEFT JOIN `" . esc_sql( $table ) . "` s ON p.ID = s.order_id " .
+					"WHERE p.post_type = 'shop_order' AND s.order_id IS NULL ORDER BY p.ID ASC LIMIT %d",
+					$limit
+				)
+			);
+		}
+		return is_array( $ids ) ? array_map( 'intval', $ids ) : array();
+	}
+
+	public static function bulk_insert_rows( array $order_ids ) {
+		$order_ids = array_unique( array_map( 'intval', array_filter( $order_ids ) ) );
+		if ( empty( $order_ids ) ) {
+			return 0;
+		}
+		$table = airomi_table( AIROMI_TABLE_ORDER_SYNC );
+		$values = array();
+		foreach ( $order_ids as $id ) {
+			$values[] = $GLOBALS['wpdb']->prepare( '(%d, %s)', $id, AIROMI_STATUS_INIT );
+		}
+		$sql = "INSERT IGNORE INTO `" . esc_sql( $table ) . "` (order_id, sync_status) VALUES " . implode( ', ', $values );
+		$GLOBALS['wpdb']->query( $sql );
+		return (int) $GLOBALS['wpdb']->rows_affected;
 	}
 }
