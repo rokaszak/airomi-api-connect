@@ -19,7 +19,7 @@ class Airomi_Admin_Settings {
 		return array(
 			'settings' => __( 'Settings', 'airomi-api-connect' ),
 			'orders'   => __( 'Orders', 'airomi-api-connect' ),
-			'missing_orders' => __( 'Missing orders', 'airomi-api-connect' ),
+			'missing-orders' => __( 'Missing orders', 'airomi-api-connect' ),
 		);
 	}
 
@@ -27,7 +27,7 @@ class Airomi_Admin_Settings {
 		return array(
 			'settings'       => 'Airomi_Admin_Tab_Settings',
 			'orders'         => 'Airomi_Admin_Tab_Orders',
-			'missing_orders' => 'Airomi_Admin_Tab_Missing_Orders',
+			'missing-orders' => 'Airomi_Admin_Tab_Missing_Orders',
 		);
 	}
 
@@ -99,7 +99,7 @@ class Airomi_Admin_Settings {
 				if ( is_readable( $tab_file ) ) {
 					require_once $tab_file;
 					if ( method_exists( $tab_class, 'render' ) ) {
-						$tab_class::render();
+						$tab_class::render( $current_tab );
 					}
 				}
 				?>

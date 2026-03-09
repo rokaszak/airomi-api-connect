@@ -4,7 +4,10 @@ defined( 'ABSPATH' ) || exit;
 
 class Airomi_Admin_Tab_Missing_Orders {
 
-	public static function render() {
+	public static function render( $current_tab = '' ) {
+		if ( $current_tab !== 'missing-orders' ) {
+			return;
+		}
 		$missing_count = Airomi_Order_Hooks::get_missing_orders_count();
 		?>
 		<div class="airomi-missing-orders-tab">

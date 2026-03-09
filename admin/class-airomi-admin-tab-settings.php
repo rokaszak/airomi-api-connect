@@ -49,7 +49,7 @@ class Airomi_Admin_Tab_Settings {
 		exit;
 	}
 
-	public static function render() {
+	public static function render( $current_tab = '' ) {
 		$webhook_url    = Airomi_Settings::get_webhook_url();
 		$http_method    = Airomi_Settings::get_http_method();
 		$timeout        = Airomi_Settings::get_timeout();

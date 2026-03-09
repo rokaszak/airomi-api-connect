@@ -4,7 +4,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Airomi_Admin_Tab_Orders {
 
-	public static function render() {
+	public static function render( $current_tab = '' ) {
 		$bulk_action = isset( $_GET['action'] ) ? sanitize_text_field( wp_unslash( $_GET['action'] ) ) : ( isset( $_GET['action2'] ) ? sanitize_text_field( wp_unslash( $_GET['action2'] ) ) : '' );
 		if ( $bulk_action === 'airomi_sync' && ! empty( $_GET['order_ids'] ) && isset( $_GET['_wpnonce'] ) ) {
 			if ( current_user_can( 'manage_woocommerce' ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'airomi_bulk_sync' ) ) {
