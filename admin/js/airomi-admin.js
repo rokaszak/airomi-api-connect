@@ -13,7 +13,6 @@
 		return airomi.ajaxUrl || (typeof ajaxurl !== 'undefined' ? ajaxurl : '');
 	}
 
-	// ----- Batch init orders -----
 	function initOrdersBatch() {
 		var btn = document.getElementById('airomi-init-orders-btn');
 		var progressWrap = document.getElementById('airomi-init-progress');
@@ -36,6 +35,7 @@
 				formData.append('action', 'airomi_init_orders');
 				formData.append('nonce', getNonce());
 				formData.append('page', String(page));
+				formData.append('total_so_far', String(totalSoFar));
 
 				fetch(getAjaxUrl(), {
 					method: 'POST',
@@ -46,8 +46,7 @@
 					.then(function (data) {
 						if (data.success && data.data) {
 							totalSoFar += data.data.processed || 0;
-							if (total === 0 && data.data.total != null) total = data.data.total;
-							if (data.data.total != null) total = data.data.total;
+							if (data.data.total != null && total === 0) total = data.data.total;
 							var pct = total > 0 ? Math.min(100, Math.round((totalSoFar / total) * 100)) : 0;
 							if (progressFill) progressFill.style.width = pct + '%';
 							if (progressText) progressText.textContent = totalSoFar + ' / ' + total + ' processed';
