@@ -134,7 +134,7 @@ class Airomi_Ajax {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'airomi-api-connect' ) ) );
 		}
-		$result = Airomi_Sync::sync_batch( AIROMI_STATUS_INIT, 10 );
+		$result = Airomi_Sync::sync_batch( AIROMI_STATUS_INIT, 100 );
 		wp_send_json_success( $result );
 	}
 }
