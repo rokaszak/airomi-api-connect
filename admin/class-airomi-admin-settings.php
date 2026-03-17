@@ -20,6 +20,7 @@ class Airomi_Admin_Settings {
 			'settings' => __( 'Settings', 'airomi-api-connect' ),
 			'orders'   => __( 'Orders', 'airomi-api-connect' ),
 			'missing-orders' => __( 'Missing orders', 'airomi-api-connect' ),
+			'resync'   => __( 'Resync Orders', 'airomi-api-connect' ),
 		);
 	}
 
@@ -28,6 +29,7 @@ class Airomi_Admin_Settings {
 			'settings'       => 'Airomi_Admin_Tab_Settings',
 			'orders'         => 'Airomi_Admin_Tab_Orders',
 			'missing-orders' => 'Airomi_Admin_Tab_Missing_Orders',
+			'resync'         => 'Airomi_Admin_Tab_Resync',
 		);
 	}
 

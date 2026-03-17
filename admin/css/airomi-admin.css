@@ -62,3 +62,12 @@
 .airomi-sync-init-progress-fill {
 	transition: width 0.2s ease;
 }
+
+.airomi-resync-textarea {
+	display: block;
+	width: 100%;
+	max-width: 600px;
+	min-height: 200px;
+	font-family: Consolas, Monaco, monospace;
+	font-size: 13px;
+}

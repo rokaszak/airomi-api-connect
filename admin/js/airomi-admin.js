@@ -308,6 +308,79 @@
 		});
 	}
 
+	function parseResyncJson(text) {
+		var orderIds = [];
+		try {
+			var arr = JSON.parse(text);
+			if (!Array.isArray(arr)) return orderIds;
+			for (var i = 0; i < arr.length; i++) {
+				var item = arr[i];
+				if (item && typeof item === 'object' && 'id' in item) {
+					var id = parseInt(item.id, 10);
+					if (id > 0) orderIds.push(id);
+				}
+			}
+		} catch (e) {
+			return null;
+		}
+		return orderIds;
+	}
+
+	function bindResyncJson() {
+		var btn = document.getElementById('airomi-resync-btn');
+		var textarea = document.getElementById('airomi-resync-json');
+		if (!btn || !textarea) return;
+		btn.addEventListener('click', function () {
+			var text = (textarea.value || '').trim();
+			var orderIds = parseResyncJson(text);
+			if (orderIds === null) {
+				alert('Invalid JSON. Expected format: [{"id":123},{"id":456}]');
+				return;
+			}
+			if (!orderIds.length) {
+				alert('No valid order IDs found in JSON.');
+				return;
+			}
+			btn.disabled = true;
+			var total = orderIds.length;
+			var processed = 0;
+			var totalSynced = 0;
+			var totalFailed = 0;
+			var chunks = [];
+			for (var j = 0; j < orderIds.length; j += BULK_BATCH_SIZE) {
+				chunks.push(orderIds.slice(j, j + BULK_BATCH_SIZE));
+			}
+			showSyncProgress(0, '0 / ' + total + ' synced');
+
+			function runNextChunk() {
+				if (chunks.length === 0) {
+					showSyncProgress(100, 'Done. ' + totalSynced + ' synced, ' + totalFailed + ' failed. Reloading…');
+					btn.disabled = false;
+					window.location.reload();
+					return;
+				}
+				var chunk = chunks.shift();
+				syncBulkOrders(chunk)
+					.then(function (data) {
+						var synced = data.synced != null ? data.synced : 0;
+						var failed = data.failed != null ? data.failed : 0;
+						totalSynced += synced;
+						totalFailed += failed;
+						processed += chunk.length;
+						var pct = total > 0 ? Math.min(100, Math.round((processed / total) * 100)) : 0;
+						showSyncProgress(pct, processed + ' / ' + total + ' synced');
+						setTimeout(runNextChunk, 150);
+					})
+					.catch(function (err) {
+						btn.disabled = false;
+						showSyncProgress(null, (err.message || 'Sync failed') + (processed > 0 ? ' (' + processed + ' / ' + total + ' done)' : ''));
+						setTimeout(hideSyncProgress, 4000);
+					});
+			}
+			runNextChunk();
+		});
+	}
+
 	function syncInitBatch() {
 		var wrap = document.querySelector('.airomi-sync-init-wrap');
 		var btn = document.getElementById('airomi-sync-init-btn');
@@ -397,5 +470,6 @@
 		bindViewDetails();
 		bindSyncOne();
 		bindBulkSync();
+		bindResyncJson();
 	});
 })();
