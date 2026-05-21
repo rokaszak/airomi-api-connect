@@ -1,10 +1,4 @@
 <?php
-/**
- * Fired when the plugin is uninstalled (deleted).
- * Removes options and custom tables.
- *
- * @package Airomi_API_Connect
- */
 
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
