@@ -37,9 +37,11 @@ final class Airomi_API_Connect {
 		require_once airomi_api_connect_path() . 'includes/class-airomi-sync.php';
 		require_once airomi_api_connect_path() . 'includes/class-airomi-order-hooks.php';
 		require_once airomi_api_connect_path() . 'includes/class-airomi-cron.php';
+		require_once airomi_api_connect_path() . 'includes/class-airomi-points-config.php';
 		require_once airomi_api_connect_path() . 'includes/class-airomi-ajax.php';
 		Airomi_Order_Hooks::init();
 		Airomi_Cron::init();
+		Airomi_Points_Config::init();
 		Airomi_Ajax::init();
 		$this->load_admin();
 	}

@@ -26,3 +26,12 @@ if ( ! defined( 'AIROMI_STATUS_FAILED' ) ) {
 if ( ! defined( 'AIROMI_CRON_HOOK_RETRY' ) ) {
 	define( 'AIROMI_CRON_HOOK_RETRY', 'airomi_retry_failed_orders' );
 }
+if ( ! defined( 'AIROMI_OPTION_POINTS_CONFIG' ) ) {
+	define( 'AIROMI_OPTION_POINTS_CONFIG', 'airomi_points_config' );
+}
+if ( ! defined( 'AIROMI_CRON_HOOK_POINTS_CONFIG' ) ) {
+	define( 'AIROMI_CRON_HOOK_POINTS_CONFIG', 'airomi_fetch_points_config' );
+}
+if ( ! defined( 'AIROMI_POINTS_CONFIG_ENDPOINT_PATH' ) ) {
+	define( 'AIROMI_POINTS_CONFIG_ENDPOINT_PATH', '/aven/api/v1/points-config' );
+}

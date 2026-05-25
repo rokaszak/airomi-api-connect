@@ -464,6 +464,42 @@
 			document.addEventListener('DOMContentLoaded', fn);
 		}
 	}
+	function bindPointsConfigFetch() {
+		var btn = document.getElementById('airomi-points-fetch-btn');
+		var msg = document.getElementById('airomi-points-fetch-msg');
+		if (!btn) return;
+		btn.addEventListener('click', function () {
+			btn.disabled = true;
+			if (msg) msg.textContent = 'Fetching…';
+			var formData = new FormData();
+			formData.append('action', 'airomi_fetch_points_config');
+			formData.append('nonce', getNonce());
+			fetch(getAjaxUrl(), {
+				method: 'POST',
+				body: formData,
+				credentials: 'same-origin'
+			})
+				.then(function (r) { return r.json(); })
+				.then(function (data) {
+					btn.disabled = false;
+					if (!data.success || !data.data) {
+						if (msg) msg.textContent = (data.data && data.data.message) ? data.data.message : 'Fetch failed';
+						return;
+					}
+					var d = data.data;
+					var enabledEl = document.getElementById('airomi-points-enabled');
+					var rateEl = document.getElementById('airomi-points-rate');
+					if (enabledEl) enabledEl.textContent = d.enabled ? 'Yes' : 'No';
+					if (rateEl) rateEl.textContent = String(d.points_per_euro != null ? d.points_per_euro : 0);
+					if (msg) msg.textContent = 'Updated.';
+				})
+				.catch(function () {
+					btn.disabled = false;
+					if (msg) msg.textContent = 'Request failed';
+				});
+		});
+	}
+
 	ready(function () {
 		initOrdersBatch();
 		syncInitBatch();
@@ -471,5 +507,6 @@
 		bindSyncOne();
 		bindBulkSync();
 		bindResyncJson();
+		bindPointsConfigFetch();
 	});
 })();

@@ -56,6 +56,7 @@ class Airomi_Admin_Tab_Settings {
 		$sync_enabled   = Airomi_Settings::is_sync_enabled();
 		$cron_interval  = Airomi_Settings::get_cron_interval();
 		$custom_headers = Airomi_Settings::get_custom_headers();
+		$points_config  = Airomi_Points_Config::get_stored();
 		if ( empty( $custom_headers ) ) {
 			$custom_headers = array( array( 'key' => '', 'value' => '' ) );
 		}
@@ -143,6 +144,38 @@ class Airomi_Admin_Tab_Settings {
 					<button type="submit" class="button button-primary"><?php esc_html_e( 'Save settings', 'airomi-api-connect' ); ?></button>
 				</p>
 			</form>
+
+			<hr />
+			<h2><?php esc_html_e( 'Points Config', 'airomi-api-connect' ); ?></h2>
+			<p class="description">
+				<?php
+				printf(
+					/* translators: %s is the option name other plugins can read. */
+					esc_html__( 'Fetched hourly from /aven/api/v1/points-config and stored in the WordPress option %s for other plugins to read.', 'airomi-api-connect' ),
+					'<code>' . esc_html( AIROMI_OPTION_POINTS_CONFIG ) . '</code>'
+				);
+				?>
+			</p>
+			<table class="form-table" role="presentation">
+				<tbody>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Enabled', 'airomi-api-connect' ); ?></th>
+						<td>
+							<span id="airomi-points-enabled"><?php echo ! empty( $points_config['enabled'] ) ? esc_html__( 'Yes', 'airomi-api-connect' ) : esc_html__( 'No', 'airomi-api-connect' ); ?></span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Points per euro', 'airomi-api-connect' ); ?></th>
+						<td>
+							<span id="airomi-points-rate"><?php echo esc_html( (string) (float) $points_config['points_per_euro'] ); ?></span>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<p>
+				<button type="button" class="button" id="airomi-points-fetch-btn"><?php esc_html_e( 'Fetch now', 'airomi-api-connect' ); ?></button>
+				<span id="airomi-points-fetch-msg" style="margin-left:8px;"></span>
+			</p>
 		</div>
 		<script type="text/template" id="airomi-header-row-tpl">
 			<p class="airomi-header-row">

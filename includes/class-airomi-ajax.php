@@ -5,11 +5,12 @@ defined( 'ABSPATH' ) || exit;
 class Airomi_Ajax {
 
 	const BATCH_SIZE = 50;
-	const ACTION_INIT_ORDERS       = 'airomi_init_orders';
-	const ACTION_GET_DETAIL       = 'airomi_get_order_detail';
-	const ACTION_SYNC_ORDER       = 'airomi_sync_order';
-	const ACTION_SYNC_BULK        = 'airomi_sync_bulk';
-	const ACTION_SYNC_INIT_BATCH  = 'airomi_sync_init_batch';
+	const ACTION_INIT_ORDERS         = 'airomi_init_orders';
+	const ACTION_GET_DETAIL          = 'airomi_get_order_detail';
+	const ACTION_SYNC_ORDER          = 'airomi_sync_order';
+	const ACTION_SYNC_BULK           = 'airomi_sync_bulk';
+	const ACTION_SYNC_INIT_BATCH     = 'airomi_sync_init_batch';
+	const ACTION_FETCH_POINTS_CONFIG = 'airomi_fetch_points_config';
 
 	public static function init() {
 		add_action( 'wp_ajax_' . self::ACTION_INIT_ORDERS, array( __CLASS__, 'ajax_init_orders' ) );
@@ -17,6 +18,7 @@ class Airomi_Ajax {
 		add_action( 'wp_ajax_' . self::ACTION_SYNC_ORDER, array( __CLASS__, 'ajax_sync_order' ) );
 		add_action( 'wp_ajax_' . self::ACTION_SYNC_BULK, array( __CLASS__, 'ajax_sync_bulk' ) );
 		add_action( 'wp_ajax_' . self::ACTION_SYNC_INIT_BATCH, array( __CLASS__, 'ajax_sync_init_batch' ) );
+		add_action( 'wp_ajax_' . self::ACTION_FETCH_POINTS_CONFIG, array( __CLASS__, 'ajax_fetch_points_config' ) );
 	}
 
 
@@ -135,6 +137,15 @@ class Airomi_Ajax {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'airomi-api-connect' ) ) );
 		}
 		$result = Airomi_Sync::sync_batch( AIROMI_STATUS_INIT, 100 );
+		wp_send_json_success( $result );
+	}
+
+	public static function ajax_fetch_points_config() {
+		check_ajax_referer( 'airomi_admin', 'nonce' );
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'airomi-api-connect' ) ) );
+		}
+		$result = Airomi_Points_Config::fetch();
 		wp_send_json_success( $result );
 	}
 }
